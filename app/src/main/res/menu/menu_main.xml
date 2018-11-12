@@ -1,0 +1,10 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.martinwalls.calendartemplates.MainActivity">
+    <item
+        android:id="@+id/action_calendar"
+        android:icon="@drawable/round_calendar_today_black_24"
+        android:title="@string/action_calendar"
+        app:showAsAction="ifRoom" />
+</menu>

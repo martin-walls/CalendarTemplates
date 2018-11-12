@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Calendar Templates</string>
+    <string name="action_calendar">Calendar</string>
+    <string name="action_new_template">New Template</string>
+    <string name="title_activity_new_template">Create New Template</string>
+    <string name="title_activity_view">Template</string>
+    <string name="text_no_templates">No Templates</string>
+    <string name="name">Name:</string>
+    <string name="location">Location:</string>
+    <string name="description">Notes:</string>
+    <string name="start_time">Start Time:</string>
+    <string name="end_time">End Time:</string>
+    <string name="color_id">Colour:</string>
+    <string name="title_activity_edit">Edit Template</string>
+</resources>
