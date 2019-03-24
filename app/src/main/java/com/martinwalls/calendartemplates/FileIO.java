@@ -15,19 +15,19 @@ import java.util.ArrayList;
 public class FileIO {
 
     // Checks if external storage is available for read and write
-    public static boolean isExternalStorageWritable() {
+    private static boolean isExternalStorageWritable() {
         String state = Environment.getExternalStorageState();
         return Environment.MEDIA_MOUNTED.equals(state);
     }
 
     // Checks if external storage is available to read
-    public static boolean isExternalStorageReadable() {
+    private static boolean isExternalStorageReadable() {
         String state = Environment.getExternalStorageState();
         return Environment.MEDIA_MOUNTED.equals(state) ||
                 Environment.MEDIA_MOUNTED_READ_ONLY.equals(state);
     }
 
-    public static void writeFile(Context context, String toWrite, boolean append) {
+    private static void writeFile(Context context, String toWrite, boolean append) {
         if (isExternalStorageWritable()) {
             File file = new File(context.getExternalFilesDir(null), "templates.txt");
             try {
@@ -40,9 +40,9 @@ public class FileIO {
         }
     }
 
-    public static void updateTemplate(Context context, String templateToUpdate, String name,
-                                     String location, String description, String startTime,
-                                     String endTime, String color) {
+    static void updateTemplate(Context context, String templateToUpdate, String name,
+                               String location, String description, String startTime,
+                               String endTime, String color) {
         String templateToWrite = name+";" + location+";" + description+";" + startTime+";"
                 + endTime+";" + color+";";
 
@@ -62,9 +62,9 @@ public class FileIO {
         writeFile(context, toWrite.toString(), false);
     }
 
-    public static void addNewTemplate(Context context, String name,
-                                      String location, String description, String startTime,
-                                      String endTime, String color) {
+    static void addNewTemplate(Context context, String name,
+                               String location, String description, String startTime,
+                               String endTime, String color) {
         String templateToWrite = name+";" + location+";" + description+";" + startTime+";"
                 + endTime+";" + color+";";
 
@@ -76,7 +76,7 @@ public class FileIO {
         }
     }
 
-    public static void deleteTemplate(Context context, String templateToDelete) {
+    static void deleteTemplate(Context context, String templateToDelete) {
         StringBuilder toWrite = new StringBuilder();
         ArrayList<ArrayList<String>> templatesList = getTemplates(context);
         for (ArrayList<String> template : templatesList) {
@@ -93,7 +93,7 @@ public class FileIO {
     }
 
     // return arraylist of all stored templates
-    public static ArrayList<ArrayList<String>> getTemplates(Context context) {
+    static ArrayList<ArrayList<String>> getTemplates(Context context) {
         ArrayList<ArrayList<String>> templates = new ArrayList<>();
         if (isExternalStorageReadable()) {
             File file = new File(context.getExternalFilesDir(null), "templates.txt");
@@ -127,7 +127,7 @@ public class FileIO {
     }
 
     // return arraylist of values for given template
-    public static ArrayList<String> getTemplateInfo(Context context, String templateName) {
+    static ArrayList<String> getTemplateInfo(Context context, String templateName) {
         ArrayList<ArrayList<String>> templatesList = getTemplates(context);
         for (ArrayList<String> template: templatesList) {
             if (template.get(0).equals(templateName)) {
