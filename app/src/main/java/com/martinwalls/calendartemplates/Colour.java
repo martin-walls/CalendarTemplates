@@ -1,6 +1,6 @@
 package com.martinwalls.calendartemplates;
 
-public enum Colours {
+public enum Colour {
     LAVENDER(1),
     SAGE(2),
     GRAPE(3),
@@ -16,10 +16,10 @@ public enum Colours {
     private int colourId;
 
     public int getColourId() {
-        return this.colourId;
+        return colourId;
     }
 
-    private Colours(int id) {
-        this.colourId = id;
+    Colour(int colourId) {
+        this.colourId = colourId;
     }
 }

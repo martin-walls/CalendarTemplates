@@ -16,10 +16,11 @@ import android.widget.EditText;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 
 public class EditActivity extends AppCompatActivity {
+
+    private String templateName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,7 +32,7 @@ public class EditActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         Intent intent = getIntent();
-        String templateName = intent.getStringExtra(MainActivity.TEMPLATE_NAME);
+        templateName = intent.getStringExtra(MainActivity.TEMPLATE_NAME);
         getSupportActionBar().setTitle(templateName);
 
         fillTemplateValues(templateName);
@@ -72,23 +73,33 @@ public class EditActivity extends AppCompatActivity {
         // Check if all fields are empty, is so don't show dialog, just go back
         EditText nameField = findViewById(R.id.name_field);
         String name = nameField.getText().toString();
+
         EditText locationField = findViewById(R.id.location_field);
         String location = locationField.getText().toString();
+
         EditText descriptionField = findViewById(R.id.description_field);
         String description = descriptionField.getText().toString();
+
         EditText startTimeField = findViewById(R.id.start_time_field);
         String startTime = startTimeField.getText().toString();
+
         EditText endTimeField = findViewById(R.id.end_time_field);
         String endTime = endTimeField.getText().toString();
+
         EditText colorField = findViewById(R.id.color_field);
         String color = colorField.getText().toString();
 
-        ArrayList<String> template = FileIO.getTemplateInfo(this,
-                getSupportActionBar().getTitle().toString());
+        DBHandler dbHandler = new DBHandler(this);
+        //remove ArrayList<String> template = FileIO.getTemplateInfo(this, getSupportActionBar().getTitle().toString());
+        Template template = dbHandler.getTemplate(templateName);
 
-        if (!(name.equals(template.get(0)) && location.equals(template.get(1))
-                && description.equals(template.get(2)) && startTime.equals(template.get(3))
-                && endTime.equals(template.get(4)) && color.equals(template.get(5)))) {
+
+        if (!(name.equals(template.getName())
+                && location.equals(template.getLocation())
+                && description.equals(template.getDescription())
+                && startTime.equals(template.getStartTime())
+                && endTime.equals(template.getEndTime())
+                && color.equals(template.getColour().getColourId()))) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage("Are you sure you want to discard your edits?")
                     .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
@@ -133,22 +144,35 @@ public class EditActivity extends AppCompatActivity {
     }
 
     public void updateTemplateFile() {
-        String templateToUpdate = getSupportActionBar().getTitle().toString();
+        Template updatedTemplate = new Template();
+
         // Get values in text edits
         EditText nameField = findViewById(R.id.name_field);
-        String name = nameField.getText().toString();
-        EditText locationField = findViewById(R.id.location_field);
-        String location = locationField.getText().toString();
-        EditText descriptionField = findViewById(R.id.description_field);
-        String description = descriptionField.getText().toString();
-        EditText startTimeField = findViewById(R.id.start_time_field);
-        String startTime = startTimeField.getText().toString();
-        EditText endTimeField = findViewById(R.id.end_time_field);
-        String endTime = endTimeField.getText().toString();
-        EditText colorField = findViewById(R.id.color_field);
-        String color = colorField.getText().toString();
+        updatedTemplate.setName(nameField.getText().toString());
 
-        FileIO.updateTemplate(this, templateToUpdate, name, location, description, startTime, endTime, color);
+        EditText locationField = findViewById(R.id.location_field);
+        updatedTemplate.setLocation(locationField.getText().toString());
+
+        EditText descriptionField = findViewById(R.id.description_field);
+        updatedTemplate.setDescription(descriptionField.getText().toString());
+
+        EditText startTimeField = findViewById(R.id.start_time_field);
+        updatedTemplate.setStartTime(Template.parseTime(startTimeField.getText().toString()));
+
+        EditText endTimeField = findViewById(R.id.end_time_field);
+        updatedTemplate.setEndTime(Template.parseTime(endTimeField.getText().toString()));
+
+        EditText colorField = findViewById(R.id.color_field);
+        String colourString = colorField.getText().toString();
+        for (Colour colour : Colour.values()) {
+            if (colour.name().equals(colourString)) {
+                updatedTemplate.setColour(colour);
+            }
+        }//TODO show colour in input box as name not number
+
+        //remove FileIO.updateTemplate(this, templateToUpdate, name, location, description, startTime, endTime, color);
+        DBHandler dbHandler = new DBHandler(this);
+        dbHandler.updateTemplate(updatedTemplate);
     }
 
     public void deleteTemplateFile() {
@@ -158,32 +182,45 @@ public class EditActivity extends AppCompatActivity {
 
     public void fillTemplateValues(String templateName) {
         // Fill in the edit fields with current template values
-        ArrayList<String> template = FileIO.getTemplateInfo(this, templateName);
+        //remove ArrayList<String> template = FileIO.getTemplateInfo(this, templateName);
+        DBHandler dbHandler = new DBHandler(this);
+        Template template = dbHandler.getTemplate(templateName);
+
         EditText name = findViewById(R.id.name_field);
         name.setText(templateName);
+
         EditText location = findViewById(R.id.location_field);
-        location.setText(template.get(1));
+        location.setText(template.getLocation());
+
         EditText description = findViewById(R.id.description_field);
-        description.setText(template.get(2));
+        description.setText(template.getDescription());
+
         EditText startTime = findViewById(R.id.start_time_field);
-        startTime.setText(template.get(3));
+        startTime.setText(template.getStartTime().getTimeString());
+
         EditText endTime = findViewById(R.id.end_time_field);
-        endTime.setText(template.get(4));
+        endTime.setText(template.getEndTime().getTimeString());
+
         EditText color = findViewById(R.id.color_field);
-        color.setText(template.get(5));
+        color.setText(template.getColour().name());
     }
 
     public void colorOnClick(View view) {
         final EditText editText = (EditText) view;
 
-        final String[] colors = {"Lavendar", "Sage", "Grape", "Flamingo", "Banana", "Tangerine",
-                "Peacock", "Graphite", "Blueberry", "Basil", "Tomato"};
-        final String[] colorIDs = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"};
+        //remove final String[] colors = {"Lavendar", "Sage", "Grape", "Flamingo", "Banana", "Tangerine",
+        //remove         "Peacock", "Graphite", "Blueberry", "Basil", "Tomato"};
+        //remove final String[] colorIDs = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"};
+        Colour[] colours = Colour.values();
+        final String[] names = new String[colours.length];
+        for (int i = 0; i < colours.length; i++) {
+            names[i] = colours[i].name();
+        }
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setItems(colors, new DialogInterface.OnClickListener() {
+        builder.setItems(names, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                editText.setText(colorIDs[which]);
+                editText.setText(names[which]);
             }
         });
         AlertDialog alert = builder.create();

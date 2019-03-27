@@ -12,11 +12,9 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.CalendarContract;
-import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -30,8 +28,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
@@ -61,8 +59,6 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(newTemplateIntent);
             }
         });
-
-//        FileIO.writeFile(this, "", false);
 
         showTemplates();
     }
@@ -99,7 +95,8 @@ public class MainActivity extends AppCompatActivity {
 
     public void addTemplateEventOnClick(View view) {
         // Check for calendar permission
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.WRITE_CALENDAR},
                     PERMISSIONS_REQUEST_WRITE_CALENDAR);
@@ -109,21 +106,27 @@ public class MainActivity extends AppCompatActivity {
         TextView templateNameView = (TextView) parent.getChildAt(0);
         String templateName = (String) templateNameView.getText();
         // Get template info
-        final ArrayList<String> template = FileIO.getTemplateInfo(this, templateName);
+        //remove: final ArrayList<String> template = FileIO.getTemplateInfo(this, templateName);
+        DBHandler dbHandler = new DBHandler(this);
+        final Template template = dbHandler.getTemplate(templateName);
 
         final Calendar c = Calendar.getInstance();
         int curYear = c.get(Calendar.YEAR);
         int curMonth = c.get(Calendar.MONTH);
         int curDay = c.get(Calendar.DAY_OF_MONTH);
+
         DatePickerDialog datePicker;
         datePicker = new DatePickerDialog(this, new DatePickerDialog.OnDateSetListener() {
             public void onDateSet(DatePicker datepicker, int year, int month, int day) {
-                String startTime = template.get(3);
-                int startHour = Integer.parseInt(startTime.substring(0, 2));
-                int startMin = Integer.parseInt(startTime.substring(3));
-                String endTime = template.get(4);
-                int endHour = Integer.parseInt(endTime.substring(0, 2));
-                int endMin = Integer.parseInt(endTime.substring(3));
+                //remove String startTime = template.get(3);
+                Template.Time startTime = template.getStartTime();
+                int startHour = Integer.parseInt(startTime.getHour());
+                int startMin = Integer.parseInt(startTime.getMinute());
+                //remove String endTime = template.get(4);
+                Template.Time endTime = template.getEndTime();
+                int endHour = Integer.parseInt(endTime.getHour());
+                int endMin = Integer.parseInt(endTime.getMinute());
+
                 Calendar eventBeginTime = Calendar.getInstance();
                 eventBeginTime.set(year, month, day, startHour, startMin);
                 Calendar eventEndTime = Calendar.getInstance();
@@ -163,15 +166,18 @@ public class MainActivity extends AppCompatActivity {
         startActivity(editIntent);
     }
 
+    //TODO replace with RecyclerView
     private void showTemplates() {
-        ArrayList<ArrayList<String>> templatesList = FileIO.getTemplates(this);
+        //remove ArrayList<ArrayList<String>> templatesList = FileIO.getTemplates(this);
+        DBHandler dbHandler = new DBHandler(this);
+        List<Template> templatesList = dbHandler.getAllTemplates();
         if (templatesList.size() > 0) {
-            for (ArrayList<String> template : templatesList) {
-                if (template.isEmpty()) {
+            for (Template template : templatesList) {
+                if (template == null) {
                     continue;
                 }
                 // get the name of the template
-                String templateName = template.get(0);
+                String templateName = template.getName();
                 // add a layout for the template
                 LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 assert inflater != null;
@@ -184,16 +190,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void createEvent(ArrayList<String> template, Calendar eventBeginTime, Calendar eventEndTime) {
-        String templateName = template.get(0);
-        String location = template.get(1);
-        String description = template.get(2);
-        String color = template.get(5);
-        int colorID;
-        if (color.isEmpty()) {
-            colorID = 6;
-        } else {
-            colorID = Integer.parseInt(color);
+    public void createEvent(Template template, Calendar eventBeginTime, Calendar eventEndTime) {
+        String templateName = template.getName();
+        String location = template.getLocation();
+        String description = template.getDescription();
+        Colour colour = template.getColour();
+        if (colour == null) {
+            colour = Colour.TANGERINE;
         }
 
         // Insert event into calendar
@@ -206,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
         values.put(CalendarContract.Events.DTSTART, eventBeginTime.getTimeInMillis());
         values.put(CalendarContract.Events.DTEND, eventEndTime.getTimeInMillis());
         values.put(CalendarContract.Events.EVENT_TIMEZONE, "Europe/London");
-        values.put(CalendarContract.Events.EVENT_COLOR_KEY, colorID);
+        values.put(CalendarContract.Events.EVENT_COLOR_KEY, colour.getColourId());
         values.put(CalendarContract.Events.HAS_ALARM, 1);
 
         Uri createUri = cr.insert(CalendarContract.Events.CONTENT_URI, values);

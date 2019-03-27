@@ -3,7 +3,6 @@ package com.martinwalls.calendartemplates;
 import android.app.AlertDialog;
 import android.app.TimePickerDialog;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
@@ -16,8 +15,8 @@ import android.widget.EditText;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
-import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 public class NewTemplateActivity extends AppCompatActivity {
 
@@ -41,10 +40,13 @@ public class NewTemplateActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_done:
-                if (createTemplateFile()) {
+                if (saveTemplate()) {
                     Toast.makeText(this, "Template created", Toast.LENGTH_SHORT).show();
-                    Intent returnIntent = new Intent(this, MainActivity.class);
-                    startActivity(returnIntent);
+//                    Intent returnIntent = new Intent(this, MainActivity.class);
+//                    startActivity(returnIntent);
+                    finish();
+                } else {
+                    Toast.makeText(this, "Error creating template", Toast.LENGTH_SHORT).show();
                 }
                 return true;
             case android.R.id.home:
@@ -61,7 +63,6 @@ public class NewTemplateActivity extends AppCompatActivity {
     }
 
     public void confirmDiscardDialog() {
-        // Check if all fields are empty, is so don't show dialog, just go back
         EditText nameField = findViewById(R.id.name_field);
         String name = nameField.getText().toString();
         EditText locationField = findViewById(R.id.location_field);
@@ -75,6 +76,7 @@ public class NewTemplateActivity extends AppCompatActivity {
         EditText colorField = findViewById(R.id.color_field);
         String color = colorField.getText().toString();
 
+        // Check if all fields are empty, is so don't show dialog, just go back
         if (!(name.isEmpty() && location.isEmpty() && description.isEmpty() && startTime.isEmpty()
                 && endTime.isEmpty() && color.isEmpty())) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -98,28 +100,50 @@ public class NewTemplateActivity extends AppCompatActivity {
         }
     }
 
-    public boolean createTemplateFile() {
-        EditText nameField = findViewById(R.id.name_field);
-        String name = nameField.getText().toString();
-        EditText locationField = findViewById(R.id.location_field);
-        String location = locationField.getText().toString();
-        EditText descriptionField = findViewById(R.id.description_field);
-        String description = descriptionField.getText().toString();
-        EditText startTimeField = findViewById(R.id.start_time_field);
-        String startTime = startTimeField.getText().toString();
-        EditText endTimeField = findViewById(R.id.end_time_field);
-        String endTime = endTimeField.getText().toString();
-        EditText colorField = findViewById(R.id.color_field);
-        String color = colorField.getText().toString();
+    public boolean saveTemplate() {
+        Template newTemplate = new Template();
 
-        if (name.isEmpty()) {
+        EditText nameField = findViewById(R.id.name_field);
+        newTemplate.setName(nameField.getText().toString());
+
+        EditText locationField = findViewById(R.id.location_field);
+        newTemplate.setLocation(locationField.getText().toString());
+
+        EditText descriptionField = findViewById(R.id.description_field);
+        newTemplate.setDescription(descriptionField.getText().toString());
+
+        EditText startTimeField = findViewById(R.id.start_time_field);
+        newTemplate.setStartTime(Template.parseTime(startTimeField.getText().toString()));
+
+        EditText endTimeField = findViewById(R.id.end_time_field);
+        newTemplate.setEndTime(Template.parseTime(endTimeField.getText().toString()));
+
+        EditText colorField = findViewById(R.id.color_field);
+        String colourString = colorField.getText().toString();
+        for (Colour colour : Colour.values()) {
+            if (colour.name().equals(colourString)) {
+                newTemplate.setColour(colour);
+            }
+        }
+        //remove newTemplate.setColour(colorField.getText().toString());
+
+        DBHandler dbHandler = new DBHandler(this);
+        List<Template> templateList =dbHandler.getAllTemplates();
+        for (Template template : templateList) {
+            if (template.getName().equals(newTemplate.getName())) {
+                Toast.makeText(this, "Name already used.", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        }
+
+        if (nameField.getText().toString().isEmpty()) {
             Toast.makeText(this, "You must enter a name", Toast.LENGTH_SHORT).show();
-        } else if (startTime.isEmpty()) {
+        } else if (startTimeField.getText().toString().isEmpty()) {
             Toast.makeText(this, "You must enter a start time.", Toast.LENGTH_SHORT).show();
-        } else if (endTime.isEmpty()) {
+        } else if (endTimeField.getText().toString().isEmpty()) {
             Toast.makeText(this, "You must enter an end time", Toast.LENGTH_SHORT).show();
         } else {
-            FileIO.addNewTemplate(this, name, location, description, startTime, endTime, color);
+            dbHandler.addNewTemplate(newTemplate);
             return true;
         }
         return false;
@@ -128,14 +152,20 @@ public class NewTemplateActivity extends AppCompatActivity {
     public void colorOnClick(View view) {
         final EditText editText = (EditText) view;
 
-        final String[] colors = {"Lavender", "Sage", "Grape", "Flamingo", "Banana", "Tangerine",
-                "Peacock", "Graphite", "Blueberry", "Basil", "Tomato"};
-        final String[] colorIDs = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"};
+//remove        final String[] colors = {"Lavender", "Sage", "Grape", "Flamingo", "Banana", "Tangerine",
+//remove                "Peacock", "Graphite", "Blueberry", "Basil", "Tomato"};
+//remove        final String[] colorIDs = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"};
+
+        final Colour[] colours = Colour.values();
+        final String[] names = new String[colours.length];
+        for (int i = 0; i < colours.length; i++) {
+            names[i] = colours[i].name();
+        }
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setItems(colors, new DialogInterface.OnClickListener() {
+        builder.setItems(names, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                editText.setText(colorIDs[which]);
+                editText.setText(names[which]);
             }
         });
         AlertDialog alert = builder.create();
